@@ -38,6 +38,7 @@ const stepValidators: Record<Exclude<PlanStepId, 6>, (values: unknown) => { succ
 export default function PlanPage() {
   const router = useRouter();
   const [saveNotice, setSaveNotice] = useState("");
+  const [validationNotice, setValidationNotice] = useState("");
   const {
     currentStep,
     completedSteps,
@@ -66,6 +67,14 @@ export default function PlanPage() {
   const persistDraft = () => {
     updatePlanDraft(form.getValues());
   };
+  // Build a keyed object for step validation (getValues(field[]) returns an array).
+  const getStepValues = (fields: Array<keyof PlanFormValues>) => {
+    const values = form.getValues();
+    return fields.reduce<Partial<PlanFormValues>>((acc, field) => {
+      acc[field] = values[field];
+      return acc;
+    }, {});
+  };
 
   const validateCurrentStep = async () => {
     if (currentStep === 6) {
@@ -78,20 +87,24 @@ export default function PlanPage() {
       return false;
     }
 
-    const data = form.getValues(fields);
+    const data = getStepValues(fields);
     const validator = stepValidators[currentStep as Exclude<PlanStepId, 6>];
-    return validator(data).success;
+    const parsed = validator(data);
+    return parsed.success;
   };
 
   const handleSaveOnly = () => {
+    setValidationNotice("");
     persistDraft();
     setSaveNotice("Step saved.");
   };
 
   const handleContinue = async () => {
     setSaveNotice("");
+    setValidationNotice("");
     const isValid = await validateCurrentStep();
     if (!isValid) {
+      setValidationNotice("Please correct the highlighted fields before continuing.");
       return;
     }
 
@@ -271,6 +284,7 @@ export default function PlanPage() {
             {currentStep === 6 ? <PlanReview values={form.getValues()} onEdit={setCurrentStep} /> : null}
 
             {saveNotice ? <p className="text-sm text-green-700">{saveNotice}</p> : null}
+            {validationNotice ? <p className="text-sm text-red-600">{validationNotice}</p> : null}
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-6">
               <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 1}>
