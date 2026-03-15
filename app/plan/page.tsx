@@ -67,6 +67,7 @@ export default function PlanPage() {
   const persistDraft = () => {
     updatePlanDraft(form.getValues());
   };
+  // Build a keyed object for step validation (getValues(field[]) returns an array).
   const getStepValues = (fields: Array<keyof PlanFormValues>) => {
     const values = form.getValues();
     return fields.reduce<Partial<PlanFormValues>>((acc, field) => {
@@ -74,7 +75,6 @@ export default function PlanPage() {
       return acc;
     }, {});
   };
-
 
   const validateCurrentStep = async () => {
     if (currentStep === 6) {
